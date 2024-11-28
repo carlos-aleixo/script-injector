@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulação de XSS com JWT</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start; /* Garante que o conteúdo comece no topo */
+            align-items: center;
+            min-height: 100vh; /* Altura mínima da página */
+            background: linear-gradient(135deg, #b9f3fc, #66c7f4);
+            overflow-x: hidden; /* Remove scroll horizontal indesejado */
+        }
+
+        /* Navbar */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: white;
+            padding: 10px 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            border-bottom: 4px solid #004d40;
+            width: 100%;
+            position: fixed;
+            top: 0;
+        }
+
+        .navbar img {
+            height: 40px;
+        }
+
+        .navbar h1 {
+            font-size: 1.5rem;
+            color: #004d40;
+            margin: 0;
+        }
+
+        /* Container */
+        .container {
+            margin-top: 100px;
+            margin-bottom: 50px;
+            width: 800px;
+            max-width: 90%;
+            display: flex;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(15px);
+            overflow: hidden;
+        }
+
+        /* Lado esquerdo */
+        .left {
+            width: 50%;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .left img {
+            width: 150px;
+            height: 150px;
+            margin-bottom: 20px;
+        }
+
+        .left h1 {
+            font-size: 1.8rem;
+            color: #004d40;
+            margin-bottom: 10px;
+        }
+
+        .left p {
+            font-size: 1rem;
+            color: #006064;
+            line-height: 1.4;
+        }
+
+        /* Lado direito */
+        #loginForm {
+            width: 50%;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        #loginForm h2 {
+            font-size: 2rem;
+            margin-bottom: 20px;
+            color: #ffffff;
+            text-transform: uppercase;
+        }
+
+        #loginForm input {
+            width: 80%;
+            padding: 12px 15px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            outline: none;
+            font-size: 1rem;
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+        }
+
+        #loginForm button {
+            width: 85%;
+            padding: 12px;
+            background-color: #4aa2d3;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+        }
+
+        #loginForm button:hover {
+            background-color: #00796b;
+        }
+
+        /* Footer */
+        .footer {
+            width: 100%;
+            text-align: center;
+            padding: 10px;
+            background-color: #004d40;
+            color: white;
+            position: fixed;
+            bottom: 0;
+            font-size: 1rem;
+        }
+
+        /* Seção de Comentários */
+        #commentsSection {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            width: 100%;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border-top: 2px solid #004d40;
+            border-radius: 0 0 20px 20px;
+        }
+
+        #commentsSection h2 {
+            font-size: 1.5rem;
+            color: #004d40;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        /* Caixa de entrada do comentário */
+        #commentsSection textarea {
+            width: 90%;
+            max-width: 600px;
+            height: 150px; /* Altura fixa */
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            resize: none;
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+            outline: none;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Botão de envio */
+        #commentsSection button {
+            width: 50%;
+            max-width: 200px;
+            padding: 10px;
+            background-color: #4aa2d3;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            margin-bottom: 20px;
+        }
+
+        #commentsSection button:last-of-type {
+            margin-top: 15px; /* Mesma margem do botão superior */
+        }
+
+        #commentsSection button:hover {
+            background-color: #00796b;
+        }
+
+        #commentsSection h3 {
+            font-size: 1.2rem;
+            color: #004d40;
+            margin-bottom: 10px;
+            width: 90%;
+            max-width: 600px;
+            text-align: left;
+        }
+
+        /* Exibição de Comentários */
+        #comments {
+            display: flex;
+            flex-direction: column; /* Organização vertical */
+            align-items: flex-start; /* Alinha os comentários à esquerda */
+            gap: 10px; /* Espaçamento entre os comentários */
+            width: 90%; /* Mesma largura da caixa de entrada */
+            max-width: 600px;
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 10px;
+            box-sizing: border-box;
+            margin-bottom: 20px; /* Espaço inferior para layout */
+        }
+
+        .comment-card {
+            width: 100%;
+            background: #ffffff;
+            padding: 5px;
+            font-size: 0.9rem;
+            color: #333;
+            border-bottom: 1px solid #ddd; /* Linha divisória */
+            word-wrap: break-word;
+        }
+
+        .comment-card:last-child {
+            border-bottom: none; /* Remove a linha divisória do último comentário */
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <div class="navbar">
+        <div>
+            <img src="https://cdn-icons-png.flaticon.com/512/2917/2917995.png" alt="LexCorp Logo">
+        </div>
+        <h1>Simulação de XSS com JWT</h1>
+    </div>
+
+    <div class="container">
+        <!-- Lado esquerdo -->
+        <div class="left">
+            <img src="https://cdn-icons-png.flaticon.com/512/11463/11463297.png" alt="Ícone ilustrativo">
+            <h1>Bem-vindo ao Sistema</h1>
+            <p>Experimente uma plataforma segura para gerenciar suas informações com total proteção.</p>
+        </div>
+
+        <!-- Formulário de Login -->
+        <form id="loginForm">
+            <h2>Login</h2>
+            <input type="text" id="username" placeholder="Usuário" required />
+            <input type="password" id="password" placeholder="Senha" required />
+            <button type="submit">Entrar</button>
+        </form>
+
+        <!-- Seção de Comentários -->
+        <div id="commentsSection" style="display: none;">
+            <h2>Bem-vindo, <span id="user">Visitante</span>!</h2>
+            <textarea id="comment" placeholder="Escreva seu comentário aqui..."></textarea>
+            <button onclick="submitComment()">Enviar Comentário</button>
+            <h3>Comentários:</h3>
+            <div id="comments"></div>
+            <button onclick="logout()">Sair</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <div class="footer">
+        &copy; 2024 LexCorp - Todos os direitos reservados.
+    </div>
+</body>
+</html>
